@@ -4,8 +4,6 @@ def analyze_site(url):
     try:
         response = requests.get(url)
         headers = response.headers
-        html_content = response.text
-        soup = BeautifulSoup(html_content, 'html.parser')
 
         issues = []
 
