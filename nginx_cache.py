@@ -13,18 +13,16 @@ def check_cache_issues(url):
 
         # Check for cache-control headers
         cache_control = response.headers.get('Cache-Control')
-        if cache_control:
-            if 'no-cache' in cache_control or 'no-store' in cache_control or 'private' in cache_control:
-                print(f"Cache might be blocked by Cache-Control header: {cache_control}")
+        if cache_control and ('no-cache' in cache_control or 'no-store' in cache_control or 'private' in cache_control):
+            print(f"Cache might be blocked by Cache-Control header: {cache_control}")
 
         # Check for set-cookie headers
-        set_cookie_headers = response.headers.get('Set-Cookie')
-        if set_cookie_headers:
-            print(f"Set-Cookie header found, might block cache: {set_cookie_headers}")
-
-        # Check for PHP session
+        set_cookie_headers = response.headers.get('Set-Cookie', '')
         if 'PHPSESSID' in set_cookie_headers:
             print("PHP session found, might block cache.")
+
+        if set_cookie_headers:
+            print(f"Set-Cookie header found, might block cache: {set_cookie_headers}")
 
     except Exception as e:
         print(f"Error occurred: {e}")
