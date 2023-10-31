@@ -1,11 +1,9 @@
 import requests
 
-def analyze_site(url):
+def check_caching_issues(url):
     try:
         response = requests.get(url)
         headers = response.headers
-
-        issues = []
 
         # Check for cache-control headers that might prevent caching
         cache_control = headers.get('Cache-Control', None)
