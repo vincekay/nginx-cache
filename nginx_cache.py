@@ -1,38 +1,37 @@
 import requests
+import sys
 
-def check_caching_issues(url):
+def check_cache_issues(url):
     try:
         response = requests.get(url)
-        headers = response.headers
 
-        # Check for common cache-control headers that might indicate caching issues
-        cache_control = headers.get('Cache-Control', None)
-        if cache_control and 'no-cache' in cache_control:
-            print("Cache-Control header is set to no-cache.")
-        
-        if cache_control and 'no-store' in cache_control:
-            print("Cache-Control header is set to no-store.")
+        # Check for cookies
+        cookies = response.cookies
+        for cookie in cookies:
+            if 'wordpress_logged_in' in cookie.name:
+                print(f"Cache might be blocked by WordPress login cookie: {cookie.name}")
 
-        # Check for Set-Cookie header which can affect caching
-        if 'Set-Cookie' in headers:
-            print("Set-Cookie header found. Cookies might be affecting caching.")
-        
-        # Check for PHP session ID which can affect caching
-        if 'PHPSESSID' in response.text:
-            print("PHP session ID found in response. This might affect caching.")
+        # Check for cache-control headers
+        cache_control = response.headers.get('Cache-Control')
+        if cache_control:
+            if 'no-cache' in cache_control or 'no-store' in cache_control or 'private' in cache_control:
+                print(f"Cache might be blocked by Cache-Control header: {cache_control}")
 
-        # Specific checks for WordPress
-        if 'X-Powered-By' in headers and 'WordPress' in headers['X-Powered-By']:
-            print("WordPress detected. Checking for common issues...")
+        # Check for set-cookie headers
+        set_cookie_headers = response.headers.get('Set-Cookie')
+        if set_cookie_headers:
+            print(f"Set-Cookie header found, might block cache: {set_cookie_headers}")
 
-            # Check for common WordPress plugins/themes that might affect caching
-            if 'wp-content/plugins' in response.text or 'wp-content/themes' in response.text:
-                print("WordPress plugins or themes detected in the response. They might be affecting caching.")
+        # Check for PHP session
+        if 'PHPSESSID' in set_cookie_headers:
+            print("PHP session found, might block cache.")
 
-        print("Analysis complete.")
-    
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error occurred: {e}")
 
-# Replace 'http://example.com' with your WordPress site URL
-check_caching_issues('http://example.com')
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <wordpress_site_url>")
+    else:
+        url = sys.argv[1]
+        check_cache_issues(url)
