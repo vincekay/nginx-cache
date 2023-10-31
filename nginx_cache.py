@@ -29,7 +29,7 @@ def check_cache_issues(url):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python script.py <wordpress_site_url>")
+        print("Usage: python3 script.py <wordpress_site_url>")
     else:
         url = sys.argv[1]
         check_cache_issues(url)
