@@ -1,35 +1,44 @@
 import requests
-import sys
+from bs4 import BeautifulSoup
 
-def check_cache_issues(url):
+def analyze_site(url):
     try:
         response = requests.get(url)
+        headers = response.headers
+        html_content = response.text
+        soup = BeautifulSoup(html_content, 'html.parser')
 
-        # Check for cookies
-        cookies = response.cookies
-        for cookie in cookies:
-            if 'wordpress_logged_in' in cookie.name:
-                print(f"Cache might be blocked by WordPress login cookie: {cookie.name}")
+        issues = []
 
-        # Check for cache-control headers
-        cache_control = response.headers.get('Cache-Control')
-        if cache_control and ('no-cache' in cache_control or 'no-store' in cache_control or 'private' in cache_control):
-            print(f"Cache might be blocked by Cache-Control header: {cache_control}")
+        # Check for cache-control headers that might prevent caching
+        cache_control = headers.get('Cache-Control', None)
+        if cache_control and ('no-cache' in cache_control or 'no-store' in cache_control):
+            issues.append("Cache-Control header is set to no-cache or no-store.")
 
-        # Check for set-cookie headers
-        set_cookie_headers = response.headers.get('Set-Cookie', '')
-        if 'PHPSESSID' in set_cookie_headers:
-            print("PHP session found, might block cache.")
+        # Check for Set-Cookie header
+        if 'Set-Cookie' in headers:
+            issues.append("Set-Cookie header found. Cookies might be preventing caching.")
 
-        if set_cookie_headers:
-            print(f"Set-Cookie header found, might block cache: {set_cookie_headers}")
+        # Check for PHP session ID
+        if 'PHPSESSID' in html_content:
+            issues.append("PHP session ID found in response. This might prevent caching.")
 
+        # Check for common WordPress plugins or themes
+        for script_tag in soup.find_all('script'):
+            src = script_tag.get('src', '')
+            if 'wp-content/plugins' in src or 'wp-content/themes' in src:
+                issues.append(f"WordPress plugin or theme detected in script source: {src}")
+
+        # Reporting the issues
+        if issues:
+            print("Potential issues detected:")
+            for issue in issues:
+                print(f"- {issue}")
+        else:
+            print("No obvious caching issues detected.")
+    
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"An error occurred: {e}")
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python3 script.py <wordpress_site_url>")
-    else:
-        url = sys.argv[1]
-        check_cache_issues(url)
+# Replace 'http://example.com' with your WordPress site URL
+analyze_site('http://example.com')
